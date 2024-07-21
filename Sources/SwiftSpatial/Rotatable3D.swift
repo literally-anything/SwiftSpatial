@@ -1,5 +1,5 @@
 /// A set of methods that defines the interface to rotate Spatial entities.
-protocol Rotatable3D {
+public protocol Rotatable3D {
     /// Rotates the entity by a quaternion.
     /// - Parameters:
     ///     - quaternion: The double-precision quaternion that specifies the rotation.

@@ -155,14 +155,33 @@ extension Angle2D: AdditiveArithmetic {
     }
 }
 
+/// Returns the cosine of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The cosine of the specified angle.
 @inlinable public func cos(_ angle: Angle2D) -> Double { angle.cos }
-
+/// Returns the hyperbolic cosine of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The hyperbolic cosine of the specified angle.
 @inlinable public func cosh(_ angle: Angle2D) -> Double { angle.cosh }
-
+/// Returns the sine of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The sine of the specified angle.
 @inlinable public func sin(_ angle: Angle2D) -> Double { angle.sin }
-
+/// Returns the hyperbolic sine of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The hyperbolic sine of the specified angle.
 @inlinable public func sinh(_ angle: Angle2D) -> Double { angle.sinh }
-
+/// Returns the tangent of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The tangent of the specified angle.
 @inlinable public func tan(_ angle: Angle2D) -> Double { angle.tan }
-
+/// Returns the hyperbolic tangent of the specified angle.
+/// - Parameters:
+///     - angle: The source angle.
+/// - Returns: The hyperbolic tangent of the specified angle.
 @inlinable public func tanh(_ angle: Angle2D) -> Double { angle.tanh }

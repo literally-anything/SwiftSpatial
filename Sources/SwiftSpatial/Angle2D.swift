@@ -8,7 +8,7 @@ public struct Angle2D: Sendable, Codable, Hashable {
     @inlinable public var degrees: Double { radians * 180 / .pi }
     /// Returns the specified angle normalized between –180° and 180.0°.
     @inlinable public var normalized: Angle2D {
-        .init(radians: radians.remainder(dividingBy: (2 * .pi)))
+        Self.atan2(y: sin, x: cos)
     }
     
     /// Creates an angle.

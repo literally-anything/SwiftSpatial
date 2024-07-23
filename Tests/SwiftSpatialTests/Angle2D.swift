@@ -52,8 +52,8 @@ import Foundation
             
             let normalizedAngle = angle.normalized
             
-            #expect(normalizedAngle.radians.isAlmostEqual(to: .pi))
-            #expect(normalizedAngle.degrees.isAlmostEqual(to: 180))
+            #expect(normalizedAngle.radians.isAlmostEqual(to: .pi) || normalizedAngle.radians.isAlmostEqual(to: -.pi))
+            #expect(normalizedAngle.degrees.isAlmostEqual(to: 180) || normalizedAngle.degrees.isAlmostEqual(to: -180))
         }
         
         @Test("Cosine") func cos() throws {

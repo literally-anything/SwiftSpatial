@@ -119,11 +119,6 @@ public struct Angle2D: Sendable, Codable, Hashable {
     }
 }
 
-extension Angle2D: CustomStringConvertible, CustomDebugStringConvertible {
-    @inlinable public var description: String { "(radians: \(radians)" }
-    @inlinable public var debugDescription: String { description }
-}
-
 extension Angle2D: AdditiveArithmetic {
     /// The angle with the zero value.
     public static let zero: Angle2D = .init()
@@ -153,6 +148,11 @@ extension Angle2D: AdditiveArithmetic {
     @inlinable public static func -= (lhs: inout Angle2D, rhs: Angle2D) {
         lhs.radians -= rhs.radians
     }
+}
+
+extension Angle2D: CustomStringConvertible, CustomDebugStringConvertible {
+    @inlinable public var description: String { "(radians: \(radians)" }
+    @inlinable public var debugDescription: String { description }
 }
 
 /// Returns the cosine of the specified angle.

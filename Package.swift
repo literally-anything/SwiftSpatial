@@ -11,6 +11,9 @@ let package = Package(
             name: "SwiftSpatial",
             targets: ["SwiftSpatial"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/keyvariable/kvSIMD.swift.git", from: "1.0.3")
+    ],
     targets: [
         .target(
             name: "SwiftSpatial"),

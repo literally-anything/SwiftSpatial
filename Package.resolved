@@ -1,0 +1,33 @@
+{
+  "originHash" : "252eb48d5a0078875c68ac62feedc05e1a6dc20a0b7a0db827449aa1bd27f0f6",
+  "pins" : [
+    {
+      "identity" : "kvsimd.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/keyvariable/kvSIMD.swift.git",
+      "state" : {
+        "revision" : "d74adbaf8b376746ed2186f671660c701a0d81e4",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "state" : {
+        "revision" : "82a453c2dfa335c7e778695762438dfe72b328d2",
+        "version" : "600.0.0-prerelease-2024-07-24"
+      }
+    },
+    {
+      "identity" : "swift-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-testing.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "33c16daa93704cd561a72fd1ab390fbfaf5acfa1"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -54,6 +54,18 @@ public struct Angle2D: Sendable, Codable, Hashable {
         .init(radians: radians)
     }
     
+    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
+    /// - Parameters:
+    ///     - other: The other angle to compare with.
+    ///     - tolerance: The tolerance for what is considered equal.
+    /// - Returns: A Boolean indicating whether the two angles are approximately equal.
+    @inlinable public func isApproximatelyEqual(
+        to other: Angle2D,
+        tolerance: Double = .ulpOfOne.squareRoot()
+    ) -> Bool {
+        radians.isAlmostEqual(to: other.radians, tolerance: tolerance)
+    }
+    
     /// The cosine of the angle.
     @inlinable public var cos: Double { Foundation.cos(radians) }
     /// The hyperbolic cosine of the angle.
@@ -119,6 +131,16 @@ public struct Angle2D: Sendable, Codable, Hashable {
     }
 }
 
+extension Angle2D: ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
+    @inlinable public init(integerLiteral value: Int64) {
+        self.init(radians: Double(value))
+    }
+    
+    @inlinable public init(floatLiteral value: Double) {
+        self.init(radians: value)
+    }
+}
+
 extension Angle2D: AdditiveArithmetic {
     /// The angle with the zero value.
     public static let zero: Angle2D = .init()
@@ -151,7 +173,7 @@ extension Angle2D: AdditiveArithmetic {
 }
 
 extension Angle2D: CustomStringConvertible, CustomDebugStringConvertible {
-    @inlinable public var description: String { "(radians: \(radians)" }
+    @inlinable public var description: String { "(radians: \(radians))" }
     @inlinable public var debugDescription: String { description }
 }
 

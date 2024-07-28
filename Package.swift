@@ -5,8 +5,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftSpatial",
     platforms: [
-        .macOS(.v14),
-        .custom("linux", versionString: "")
+        .macOS(.v14)
     ],
     products: [
         .library(

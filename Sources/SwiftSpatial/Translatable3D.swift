@@ -11,3 +11,11 @@ public protocol Translatable3D {
     /// (Needs default implementation)
     func translated(by vector: Vector3D) -> Self
 }
+
+extension Translatable3D {
+    @inlinable public func translated(by vector: Vector3D) -> Self {
+        var v = self
+        v.translate(by: vector)
+        return v
+    }
+}

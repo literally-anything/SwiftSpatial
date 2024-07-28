@@ -5,6 +5,12 @@ public extension Double {
         tolerance: Self = Self.ulpOfOne.squareRoot()
     ) -> Bool {
         assert(tolerance >= .ulpOfOne && tolerance < 1, "tolerance should be in [.ulpOfOne, 1).")
+        if other.isAlmostZero(absoluteTolerance: tolerance) {
+            let isZero = isAlmostZero(absoluteTolerance: tolerance)
+            if isZero {
+                return true
+            }
+        }
         guard self.isFinite && other.isFinite else {
             return rescaledAlmostEqual(to: other, tolerance: tolerance)
         }

@@ -1,4 +1,4 @@
-import simd
+public import simd
 
 /// A size that describes width, height, and depth in a 3D coordinate system.
 public struct Size3D: Sendable, Codable, Hashable {

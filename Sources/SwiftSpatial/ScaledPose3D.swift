@@ -1,4 +1,4 @@
-import simd
+public import simd
 
 /// A structure that contains a position, rotation, and scale.
 public struct ScaledPose3D: Sendable, Codable, Hashable {

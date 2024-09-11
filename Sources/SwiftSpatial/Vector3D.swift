@@ -1,5 +1,5 @@
-import Foundation
-import simd
+public import Foundation
+public import simd
 
 /// A three-component vector.
 public struct Vector3D: Sendable, Codable, Hashable {

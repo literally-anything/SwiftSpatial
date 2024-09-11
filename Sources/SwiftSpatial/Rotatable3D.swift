@@ -1,4 +1,4 @@
-import simd
+public import simd
 
 /// A set of methods that defines the interface to rotate Spatial entities.
 public protocol Rotatable3D {

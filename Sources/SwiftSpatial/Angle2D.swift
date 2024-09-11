@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// A geometric angle with a value you access in either radians or degrees.
 public struct Angle2D: Sendable, Codable, Hashable {

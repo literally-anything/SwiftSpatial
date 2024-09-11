@@ -1,5 +1,4 @@
-import Foundation
-import simd
+public import simd
 
 /// A structure that defines spherical coordinates in radial, inclination, azimuthal order.
 public struct SphericalCoordinates3D: Sendable, Codable, Hashable {

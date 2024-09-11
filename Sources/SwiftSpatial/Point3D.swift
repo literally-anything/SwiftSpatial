@@ -1,5 +1,4 @@
-import Foundation
-import simd
+public import simd
 
 /// A point in a 3D coordinate system.
 public struct Point3D: Sendable, Codable, Hashable {

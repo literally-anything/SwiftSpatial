@@ -1,4 +1,4 @@
-import simd
+public import simd
 
 extension simd_float4x4 {
     @inlinable internal func toDouble() -> simd_double4x4 {

@@ -23,7 +23,8 @@ let package = Package(
                 .product(name: "kvSIMD", package: "kvSIMD.swift")
             ],
             swiftSettings: [
-                .swiftLanguageVersion(.v6),
+                .swiftLanguageMode(.v6),
+                .enableUpcomingFeature("InternalImportsByDefault"),
                 .unsafeFlags(["-O", "-whole-module-optimization"], .when(configuration: .release)),
                 .unsafeFlags(["-Onone"], .when(configuration: .debug)),
             ]

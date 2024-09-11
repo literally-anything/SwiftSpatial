@@ -1,5 +1,4 @@
-import Foundation
-import simd
+public import simd
 
 /// A rotation in three dimensions.
 public struct Rotation3D: Sendable, Hashable, Codable {

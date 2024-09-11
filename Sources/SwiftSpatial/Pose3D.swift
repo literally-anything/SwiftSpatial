@@ -1,4 +1,4 @@
-import simd
+public import simd
 
 /// A structure that contains a 3D position and a 3D rotation.
 public struct Pose3D: Sendable, Codable, Hashable {

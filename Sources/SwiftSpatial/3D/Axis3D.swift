@@ -1,4 +1,4 @@
-/// Constants that describe an axis.
+/// Constants that describe a 3D axis.
 public enum Axis3D: Sendable, Codable, Hashable {
     /// The operation is along the x-axis.
     case x

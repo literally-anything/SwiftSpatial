@@ -27,7 +27,7 @@ extension Rotatable3D {
     }
     
     @inlinable public func rotated(by rotation: Rotation3D) -> Self {
-        return rotated(by: rotation.quaternion)
+        rotated(by: rotation.quaternion)
     }
     
     @inlinable public func rotated(by quaternion: simd_quatd) -> Self {

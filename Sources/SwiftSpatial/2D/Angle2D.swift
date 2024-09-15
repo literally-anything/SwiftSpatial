@@ -8,7 +8,15 @@ public struct Angle2D: Sendable, Codable, Hashable {
     @inlinable public var degrees: Double { radians * 180 / .pi }
     /// Returns the specified angle normalized between –180° and 180.0°.
     @inlinable public var normalized: Angle2D {
-        Self.atan2(y: sin, x: cos)
+        var angle = self
+        angle.normalize()
+        return angle
+    }
+    /// Returns the inverse of the angle.
+    @inlinable public var inverse: Angle2D {
+        var angle = self
+        angle.invert()
+        return angle
     }
     
     /// Creates an angle.
@@ -52,6 +60,17 @@ public struct Angle2D: Sendable, Codable, Hashable {
     /// - Returns: A new angle structure with the specified double-precision radians.
     @inlinable public static func radians(_ radians: Double) -> Angle2D {
         .init(radians: radians)
+    }
+    
+    /// Normalizes the angle between –180° and 180.0°.
+    @inlinable public mutating func normalize() {
+        radians = Foundation.atan2(sin, cos)
+    }
+    /// Inverts the angle.
+    /// The new angle is 180º rotated..
+    @inlinable public mutating func invert() {
+        radians = radians + 180
+        normalize()
     }
     
     /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.

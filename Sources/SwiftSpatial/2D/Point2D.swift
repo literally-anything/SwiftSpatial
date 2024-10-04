@@ -1,4 +1,5 @@
 import simd
+public import RealModule
 
 /// A point in a 2D coordinate system.
 public struct Point2D: Sendable, Codable, Hashable {
@@ -58,15 +59,19 @@ public struct Point2D: Sendable, Codable, Hashable {
     @inlinable public init(_ size: Size2D) {
         self.init(vector: size.vector)
     }
-//    /// Creates a Spatial point that represents the Cartesian coordinates of the specified spherical coordinates structure.
-//    /// - Parameters:
-//    ///     - coords: A spherical coordinate that specifies the coordinates.
-//    @inlinable public init(_ coords: SphericalCoordinates3D) {
-//    }
+    /// Creates a point from the specified 2D polar coordinates structure.
+    /// - Parameters:
+    ///     - polar: A polar coordinates structure to convert.
+    @inlinable public init(_ polar: PolarCoordinates2D) {
+        self.init(vector: .init(
+            x: polar.angle.cos * polar.magnitude,
+            y: polar.angle.sin * polar.magnitude
+        ))
+    }
     /// Creates a point from the specified double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the coordinates.
-    public init(vector: SIMD2<Double>) {
+    @inlinable public init(vector: SIMD2<Double>) {
         self.vector = vector
     }
     
@@ -78,18 +83,114 @@ public struct Point2D: Sendable, Codable, Hashable {
         let difference = other.vector - vector
         return (difference * difference).sum().squareRoot()
     }
+}
+
+extension Point2D: ExpressibleByArrayLiteral {
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 2, "Point2D only has 2 elements.")
+
+        self.init(x: elements.first!, y: elements.last!)
+    }
+}
+
+extension Point2D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Point2D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        x.isApproximatelyEqual(to: other.x, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Point2D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        x.isApproximatelyEqual(to: other.x, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Point2D: Primitive2D {
+    /// The point with infinite x- and y-coordinate values.
+    public static let infinity: Point2D = .init(x: .infinity, y: .infinity)
+    /// The point with the zero value.
+    public static let zero: Point2D = .init()
+
+    /// A Boolean value that indicates whether the point is zero.
+    @inlinable public var isZero: Bool {
+        x.isZero
+        && y.isZero
+    }
+    /// A Boolean value that indicates whether all of the coordinates of the point are finite.
+    @inlinable public var isFinite: Bool {
+        x.isFinite
+        && y.isFinite
+    }
+    /// A Boolean value that indicates whether the point contains any NaN values.
+    @inlinable public var isNaN: Bool {
+        x.isNaN
+        || y.isNaN
+    }
+
+    @inlinable public mutating func apply(_ pose: Pose2D) {
+        vector += pose.position.vector
+        self.rotate(by: pose.angle)
+    }
     
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
+//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+//        vector += scaledPose.position.vector
+//        rotate(by: scaledPose.rotation)
+//        vector *= scaledPose.scale
+//    }
+}
+
+extension Point2D: Translatable2D {
+    /// Offsets the point by the specified vector.
     /// - Parameters:
-    ///     - other: The other point value to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two point are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Point2D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        x.isAlmostEqual(to: other.x, tolerance: tolerance)
-        && y.isAlmostEqual(to: other.y, tolerance: tolerance)
+    ///     - vector: The vector that defines the translation.
+    @inlinable public mutating func translate(by vector: Vector2D) {
+        assert(vector.isFinite)
+        
+        self += vector
+    }
+}
+
+extension Point2D: Rotatable2D {
+    @inlinable public mutating func rotate(by angle: Angle2D) {
+        rotate(by: angle, around: .zero)
+    }
+    /// Rotates the point by an angle around the specified point.
+    /// - Parameters:
+    ///     - angle: The angle that specifies the rotation.
+    ///     - pivot: A point that defines the rotation pivot.
+    @inlinable public mutating func rotate(
+        by angle: Angle2D,
+        around pivot: Point2D
+    ) {
+        let angleCos = angle.cos
+        let angleSin = angle.sin
+        vector = .init(
+            x: angleCos * (x - pivot.x) - angleSin * (y - pivot.y) + pivot.x,
+            y: angleSin * (x - pivot.x) + angleCos * (y - pivot.y) + pivot.y
+        )
+    }
+    @inlinable public mutating func flip(along axis: Axis2D) {
+        switch axis {
+        case .x:
+            x.negate()
+        case .y:
+            y.negate()
+        }
+    }
+    
+    /// Returns the point rotated by an angle around the specified point.
+    /// - Parameters:
+    ///     - angle: The angle that specifies the rotation.
+    ///     - pivot: A point that defines the rotation pivot.
+    @inlinable public func rotated(
+        by angle: Angle2D,
+        around pivot: Point2D
+    ) -> Point2D {
+        var point = self
+        point.rotate(by: angle, around: pivot)
+        return point
     }
 }
 
@@ -209,13 +310,13 @@ extension Point2D {
 //    ///     - rhs: The right-hand-side value.
 //    @inlinable public static func * (lhs: ProjectiveTransform3D, rhs: Point3D) -> Point3D {
 //    }
-//    /// Returns a new point after applying the pose to the point.
-//    /// - Parameters:
-//    ///     - lhs: The left-hand-side value.
-//    ///     - rhs: The right-hand-side value.
-//    @inlinable public static func * (lhs: Pose2D, rhs: Point2D) -> Point2D {
-//        rhs.applying(lhs)
-//    }
+    /// Returns a new point after applying the pose to the point.
+    /// - Parameters:
+    ///     - lhs: The left-hand-side value.
+    ///     - rhs: The right-hand-side value.
+    @inlinable public static func * (lhs: Pose2D, rhs: Point2D) -> Point2D {
+        rhs.applying(lhs)
+    }
     /// Multiplies a point and a double-precision value, and stores the result in the left-hand-side variable.
     /// - Parameters:
     ///     - lhs: The left-hand-side value.
@@ -242,51 +343,6 @@ extension Point2D {
     }
 }
 
-extension Point2D {//: Primitive2D {
-    /// The point with infinite x- and y-coordinate values.
-    public static let infinity: Point2D = .init(x: .infinity, y: .infinity)
-    /// The point with the zero value.
-    public static let zero: Point2D = .init()
-
-    /// A Boolean value that indicates whether the point is zero.
-    @inlinable public var isZero: Bool {
-        x.isZero
-        && y.isZero
-    }
-    /// A Boolean value that indicates whether all of the coordinates of the point are finite.
-    @inlinable public var isFinite: Bool {
-        x.isFinite
-        && y.isFinite
-    }
-    /// A Boolean value that indicates whether the point contains any NaN values.
-    @inlinable public var isNaN: Bool {
-        x.isNaN
-        || y.isNaN
-    }
-    
-//    @inlinable public mutating func apply(_ pose: Pose2D) {
-//        vector += pose.position.vector
-//        self.rotate(by: pose.angle)
-//    }
-    
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.rotation)
-//        vector *= scaledPose.scale
-//    }
-}
-
-extension Point2D: Translatable2D {
-    /// Offsets the point by the specified vector.
-    /// - Parameters:
-    ///     - vector: The vector that defines the translation.
-    @inlinable public mutating func translate(by vector: Vector2D) {
-        assert(vector.isFinite)
-        
-        self += vector
-    }
-}
-
 extension Point2D: SIMDStorage {
     @inlinable public var scalarCount: Int { 2 }
     @inlinable public subscript(index: Int) -> Double {
@@ -301,7 +357,7 @@ extension Point2D: SIMDStorage {
 
 extension Point2D: CustomStringConvertible, CustomDebugStringConvertible {
     /// A textual representation of the point.
-    @inlinable public var description: String { "(x: \(x), y: \(y))" }
+    @inlinable public var description: String { "Point2D(x: \(x), y: \(y))" }
     /// A textual representation of the point for debugging.
     @inlinable public var debugDescription: String { description }
 }

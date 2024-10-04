@@ -1,4 +1,4 @@
-/// A set of methods that defines the interface to translate Spatial entities.
+/// A set of methods that defines the interface to translate 2D Spatial entities.
 public protocol Translatable2D {
     /// Translates the entity by the specified vector.
     /// - Parameters:

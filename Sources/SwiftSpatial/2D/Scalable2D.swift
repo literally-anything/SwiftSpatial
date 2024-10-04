@@ -1,4 +1,4 @@
-/// A set of methods that defines the interface to scale Spatial entities.
+/// A set of methods that defines the interface to scale 2D Spatial entities.
 public protocol Scalable2D {
     /// Scales the entity by the specified size.
     /// - Parameters:

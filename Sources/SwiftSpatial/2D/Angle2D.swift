@@ -1,4 +1,5 @@
 public import Foundation
+public import RealModule
 
 /// A geometric angle with a value you access in either radians or degrees.
 public struct Angle2D: Sendable, Codable, Hashable {
@@ -16,6 +17,12 @@ public struct Angle2D: Sendable, Codable, Hashable {
     @inlinable public var inverse: Angle2D {
         var angle = self
         angle.invert()
+        return angle
+    }
+    /// Returns the negative of the angle.
+    @inlinable public var negated: Angle2D {
+        var angle = self
+        angle.negate()
         return angle
     }
     
@@ -44,7 +51,7 @@ public struct Angle2D: Sendable, Codable, Hashable {
     /// Creates an angle with the specified double-precision radians.
     /// - Parameters:
     ///     - radians: A double-precision value that specifies the angle in radians.
-    public init(radians: Double) {
+    @inlinable public init(radians: Double) {
         self.radians = radians
     }
     /// Returns a new angle structure with the specified double-precision degrees.
@@ -69,20 +76,15 @@ public struct Angle2D: Sendable, Codable, Hashable {
     /// Inverts the angle.
     /// The new angle is 180º rotated..
     @inlinable public mutating func invert() {
-        radians = radians + 180
-        normalize()
+        if radians >= 0 {
+            radians -= .pi
+        } else if radians < 0 {
+            radians += .pi
+        }
     }
-    
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
-    /// - Parameters:
-    ///     - other: The other angle to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two angles are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Angle2D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        radians.isAlmostEqual(to: other.radians, tolerance: tolerance)
+    /// Negates the angle.
+    @inlinable public mutating func negate() {
+        radians.negate()
     }
     
     /// The cosine of the angle.
@@ -160,6 +162,40 @@ extension Angle2D: ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
     }
 }
 
+extension Angle2D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Angle2D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        radians.isApproximatelyEqual(
+            to: other.radians,
+            relativeTolerance: relativeTolerance
+        )
+    }
+    
+    @inlinable public func isApproximatelyEqual(to other: Angle2D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        radians.isApproximatelyEqual(
+            to: other.radians,
+            absoluteTolerance: absoluteTolerance,
+            relativeTolerance: relativeTolerance
+        )
+    }
+}
+
+extension Angle2D: Rotatable2D {
+    @inlinable public mutating func rotate(by angle: Angle2D) {
+        radians += angle.radians
+    }
+
+    @inlinable public mutating func flip(along axis: Axis2D) {
+        switch axis {
+        case .x:
+            radians.negate()
+        case .y:
+            radians = .pi - radians
+        }
+    }
+}
+
 extension Angle2D: AdditiveArithmetic {
     /// The angle with the zero value.
     public static let zero: Angle2D = .init()
@@ -168,7 +204,9 @@ extension Angle2D: AdditiveArithmetic {
     @inlinable prefix public static func + (x: Angle2D) -> Angle2D { x }
     /// Adds two angles and produces their sum.
     @inlinable public static func + (lhs: Angle2D, rhs: Angle2D) -> Angle2D {
-        .init(radians: lhs.radians + rhs.radians)
+        var angle = lhs
+        angle += rhs
+        return angle
     }
     /// Adds two angles and stores the result in the left-hand-side variable.
     @inlinable public static func += (lhs: inout Angle2D, rhs: Angle2D) {
@@ -183,7 +221,9 @@ extension Angle2D: AdditiveArithmetic {
     }
     /// Subtracts one angle from another and produces their difference.
     @inlinable public static func - (lhs: Angle2D, rhs: Angle2D) -> Angle2D {
-        .init(radians: lhs.radians - rhs.radians)
+        var angle = lhs
+        angle -= rhs
+        return angle
     }
     /// Subtracts the second angle from the first and stores the difference in the left-hand-side variable.
     @inlinable public static func -= (lhs: inout Angle2D, rhs: Angle2D) {
@@ -192,7 +232,7 @@ extension Angle2D: AdditiveArithmetic {
 }
 
 extension Angle2D: CustomStringConvertible, CustomDebugStringConvertible {
-    @inlinable public var description: String { "(radians: \(radians))" }
+    @inlinable public var description: String { "Angle2D(radians: \(radians))" }
     @inlinable public var debugDescription: String { description }
 }
 

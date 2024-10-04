@@ -1,4 +1,4 @@
-/// A set of methods common to Spatial primitives.
+/// A set of methods common to 2D Spatial primitives.
 public protocol Primitive2D {
     /// A primitive with infinite values.
     static var infinity: Self { get }
@@ -16,12 +16,12 @@ public protocol Primitive2D {
 //    /// - Parameters:
 //    ///     - transform: The affine transform that the function applies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    mutating func apply(_ transform: AffineTransform3D)
+//    mutating func apply(_ transform: AffineTransform2D)
 //    /// Applies a projective transform.
 //    /// - Parameters:
 //    ///     - transform: The projective transform that the function applies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    mutating func apply(_ transform: ProjectiveTransform3D)
+//    mutating func apply(_ transform: ProjectiveTransform2D)
     /// Applies a pose.
     /// - Parameters:
     ///     - pose: The pose that the function applies to the Spatial primitive.
@@ -35,12 +35,12 @@ public protocol Primitive2D {
 //    /// - Parameters:
 //    ///     - transform: The affine transform that the function applies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    func applying(_ transform: AffineTransform3D) -> Self
+//    func applying(_ transform: AffineTransform2D) -> Self
 //    /// Returns the entity that results from applying a projective transform.
 //    /// - Parameters:
 //    ///     - transform: The projective transform that the function applies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    func applying(_ transform: ProjectiveTransform3D) -> Self
+//    func applying(_ transform: ProjectiveTransform2D) -> Self
     /// Returns the entity that results from applying a pose.
     /// - Parameters:
     ///     - pose: The pose that the function applies to the Spatial primitive.
@@ -55,12 +55,12 @@ public protocol Primitive2D {
 //    /// - Parameters:
 //    ///     - transform: The affine transform that the function unapplies to the Spatial primitive.
 //    /// (Needs default implementation)
-//    mutating func unapply(_ transform: AffineTransform3D)
+//    mutating func unapply(_ transform: AffineTransform2D)
 //    /// Unapplies an projective transform.
 //    /// - Parameters:
 //    ///     - transform: The projective transform that the function unapplies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    mutating func unapply(_ transform: ProjectiveTransform3D)
+//    mutating func unapply(_ transform: ProjectiveTransform2D)
     /// Unapplies a pose.
     /// - Parameters:
     ///     - pose: The pose that the function unapplies to the Spatial primitive.
@@ -75,12 +75,12 @@ public protocol Primitive2D {
 //    /// - Parameters:
 //    ///     - transform: The affine transform that the function unapplies to the Spatial primitive.
 //    /// (Needs default implementation)
-//    func unapplying(_ transform: AffineTransform3D) -> Self
+//    func unapplying(_ transform: AffineTransform2D) -> Self
 //    /// Returns the entity that results from unapplying a projective transform.
 //    /// - Parameters:
 //    ///     - transform: The projective transform that the function unapplies to the Spatial primitive.
 //    /// (Needs default implementation)?
-//    mutating func unapplying(_ transform: ProjectiveTransform3D) -> Self
+//    mutating func unapplying(_ transform: ProjectiveTransform2D) -> Self
     /// Returns the entity that results from unapplying a pose.
     /// - Parameters:
     ///     - pose: The pose that the function unapplies to the Spatial primitive.

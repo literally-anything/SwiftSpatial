@@ -61,42 +61,69 @@ public struct Pose2D: Sendable, Codable, Hashable {
         self.angle = angle
     }
     
-    /// Returns a Boolean value that indicates whether two poses are equal within a specified tolerance.
-    /// - Parameters:
-    ///     - other: The right-hand side value.
-    ///     - tolerance: A double-precision value that specifies the tolerance.
-    /// - Returns: A Boolean indicating whether the two poses are equal within a specified tolerance.
-    @inlinable public func isApproximatelyEqual(
-        to other: Pose2D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        position.isApproximatelyEqual(to: other.position, tolerance: tolerance)
-        && angle.isApproximatelyEqual(to: other.angle, tolerance: tolerance)
-    }
-    
     /// Sets the pose to it's inverse.
     @inlinable public mutating func invert() {
         position = -position
         angle.invert()
     }
     
+    /// Returns a pose that represents the concatenation of two poses.
+    /// - Parameters:
+    ///     - transform: The second pose.
+    @inlinable public func concatenating(_ transform: Pose2D) -> Pose2D {
+        self * transform
+    }
+    /// Returns a pose that represents the concatenation of a scaled pose and a pose.
+    /// - Parameters:
+    ///     - transform: A scaled pose to concatenate.
+    @inlinable public func concatenating(_ transform: ScaledPose2D) -> ScaledPose2D {
+        transform * .init(self)
+    }
+}
+
+extension Pose2D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Pose2D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        position.isApproximatelyEqual(to: other.position, relativeTolerance: relativeTolerance) &&
+        angle.isApproximatelyEqual(to: other.angle, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Pose2D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        position.isApproximatelyEqual(to: other.position, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        angle.isApproximatelyEqual(to: other.angle, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Pose2D {
+    /// The identity pose.
+    public static let identity: Pose2D = .init()
+    
+    /// A Boolean value that indicates whether the pose is the identity pose.
+    @inlinable public var isIdentity: Bool {
+        position.isZero && angle.radians.isZero
+    }
+}
+
+extension Pose2D: Translatable2D {
+    @inlinable public mutating func translate(by vector: Vector2D) {
+        position.translate(by: vector)
+    }
+}
+
+extension Pose2D: Rotatable2D {
+    @inlinable public mutating func rotate(by angle: Angle2D) {
+        self.angle += angle
+    }
+    
     /// Flips a pose along the specified axis.
-    /// ToDo: This is completely wrong and doesn't work. Fix it.
     /// - Parameters:
     ///     - axis: An axis structure that specifies the flip axis.
     @inlinable public mutating func flip(along axis: Axis2D) {
-        switch axis {
-        case .x:
-            position.vector.x.negate()
-            angle.radians = .pi - angle.radians
-        case .y:
-            position.vector.y.negate()
-            angle.radians.negate()
-            angle.normalize()
-        }
+        position.flip(along: axis)
+        angle.flip(along: axis)
     }
     /// Returns a pose that results from flipping it along the specified axis.
-    /// ToDo: This is completely wrong and doesn't work. Fix it.
     /// - Parameters:
     ///     - axis: An axis structure that specifies the flip axis.
     /// - Returns: The pose flipped along the specified axis.
@@ -110,7 +137,7 @@ public struct Pose2D: Sendable, Codable, Hashable {
 extension Pose2D {
     /// Returns the inverse of the pose.
     /// - Parameters:
-    ///     - pose: The scaled pose to invert.
+    ///     - pose: The pose to invert.
     @inlinable public static prefix func - (pose: Pose2D) -> Pose2D {
         pose.inverse
     }
@@ -132,46 +159,11 @@ extension Pose2D {
         lhs.position += Vector2D(rhs.position)
         lhs.angle += rhs.angle
     }
-    
-    /// Returns a pose that represents the concatenation of two poses.
-    /// - Parameters:
-    ///     - transform: The second pose.
-    @inlinable public func concatenating(_ transform: Pose2D) -> Pose2D {
-        self * transform
-    }
-//    /// Returns a pose that represents the concatenation of a scaled pose and a pose.
-//    /// - Parameters:
-//    ///     - transform: A scaled pose to concatenate.
-//    @inlinable public func concatenating(_ transform: ScaledPose2D) -> ScaledPose2D {
-//        transform * .init(self)
-//    }
-}
-
-extension Pose2D {
-    /// The identity pose.
-    public static let identity: Pose2D = .init()
-    
-    /// A Boolean value that indicates whether the pose is the identity pose.
-    @inlinable public var isIdentity: Bool {
-        position.isZero && angle.radians.isZero
-    }
-}
-
-extension Pose2D: Translatable2D {
-    @inlinable public mutating func translate(by vector: Vector2D) {
-        position.translate(by: vector)
-    }
-}
-
-extension Pose2D: Rotatable2D {
-    public mutating func rotate(by angle: Angle2D) {
-        self.angle += angle
-    }
 }
 
 extension Pose2D: CustomStringConvertible, CustomDebugStringConvertible {
     /// A textual representation of the pose.
-    @inlinable public var description: String { "(position: \(position), angle: \(angle))" }
+    @inlinable public var description: String { "Pose2D(position: \(position), angle: \(angle))" }
     /// A textual representation of the pose for debugging.
     @inlinable public var debugDescription: String { description }
 }

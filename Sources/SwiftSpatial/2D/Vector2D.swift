@@ -1,5 +1,6 @@
 import Foundation
 import simd
+public import RealModule
 
 /// A three-component vector.
 public struct Vector2D: Sendable, Codable, Hashable {
@@ -22,6 +23,10 @@ public struct Vector2D: Sendable, Codable, Hashable {
     /// The length of the vector.
     @inlinable public var length: Double {
         lengthSquared.squareRoot()
+    }
+    /// The angle of the vector.
+    @inlinable public var angle: Angle2D {
+        .atan2(y: y, x: x)
     }
     /// A new vector that represents the normalized copy of the current vector.
     @inlinable public var normalized: Vector2D {
@@ -73,12 +78,27 @@ public struct Vector2D: Sendable, Codable, Hashable {
     @inlinable public init(_ size: Size2D) {
         self.init(vector: size.vector)
     }
+    /// Creates a vector from the specified 2D polar coordinates structure.
+    /// - Parameters:
+    ///     - polar: A polar coordinates structure to convert.
+    @inlinable public init(_ polar: PolarCoordinates2D) {
+        self.init(angle: polar.angle,
+                  length: polar.magnitude)
+    }
     /// Creates a unit vector from the specified 2D angle.
     /// - Parameters:
     ///     - angle: The angle that specifies the direction..
     @inlinable public init(_ angle: Angle2D) {
         self.init(vector: .init(x: angle.cos,
                                 y: angle.sin))
+    }
+    /// Creates a vector from the specified 2D angle and length.
+    /// - Parameters:
+    ///     - angle: The angle that specifies the direction.
+    ///     - length: The length of the vector.
+    @inlinable public init(angle: Angle2D, length: Double) {
+        self.init(vector: .init(x: angle.cos * length,
+                                y: angle.sin * length))
     }
     /// Creates a vector from the specified double-percision vector.
     /// - Parameters:
@@ -87,16 +107,14 @@ public struct Vector2D: Sendable, Codable, Hashable {
         self.vector = vector
     }
     
-//    /// Returns the rotation around the origin from the first vector to the second vector.
-//    /// - Parameters:
-//    ///     - other: The second vector that the function computes the rotation to.
-//    /// - Returns: The rotation between two vectors.
-//    @inlinable public func rotation(to other: Vector2D) -> Rotation2D {
-//        let angle = acos(dot(other) / (length * other.length))
-//        let axis = cross(other).vector
-//        
-//        return Rotation3D(quaternion: .init(angle: angle, axis: axis))
-//    }
+    /// Returns the angle around the origin from the first vector to the second vector.
+    /// - Parameters:
+    ///     - other: The second vector that the function computes the angle to.
+    /// - Returns: The angle between two vectors.
+    @inlinable public func rotation(to other: Vector2D) -> Angle2D {
+        let angle = dot(other) / (length * other.length)
+        return .init(radians: angle)
+    }
     /// Calculates the dot product of the vector and the specified vector.
     /// - Parameters:
     ///     - other: The second vector.
@@ -104,15 +122,6 @@ public struct Vector2D: Sendable, Codable, Hashable {
     @inlinable public func dot(_ other: Vector2D) -> Double {
         (other.vector * vector).sum()
     }
-//    /// Calculates the cross product of the vector and the specified vector.
-//    /// - Parameters:
-//    ///     - other: The second vector.
-//    /// - Returns: The cross product of the vector and the specified vector.
-//    @inlinable public func cross(_ other: Vector3D) -> Vector3D {
-//        .init(x: y * other.z - z * other.y,
-//              y: z * other.x - x * other.z,
-//              z: x * other.y - y * other.x)
-//    }
     /// Normalizes the mutable vector.
     @inlinable public mutating func normalize() {
         vector /= length
@@ -131,18 +140,103 @@ public struct Vector2D: Sendable, Codable, Hashable {
     @inlinable public func reflected(_ normal: Vector2D) -> Vector2D {
         .init(vector: vector - 2 * dot(normal) * normal.vector)
     }
+}
+
+extension Vector2D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Vector2D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        x.isApproximatelyEqual(to: other.x, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Vector2D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        x.isApproximatelyEqual(to: other.x, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Vector2D: Primitive2D {
+    /// A vector that contains the values 1, 0.
+    public static let right: Vector2D = .init(x: 1, y: 0)
+    /// A vector that contains the values 0, 1.
+    public static let up: Vector2D = .init(x: 0, y: 1)
+    /// A vector that contains all infinities.
+    public static let infinity: Vector2D = .init(x: .infinity, y: .infinity)
+    /// A vector that contains all zeros.
+    public static let zero: Vector2D = .init()
+
+    /// A Boolean value that indicates whether the vector is zero.
+    @inlinable public var isZero: Bool {
+        x.isZero
+        && y.isZero
+    }
+    /// A Boolean value that indicates whether all the components of the vector are finite.
+    @inlinable public var isFinite: Bool {
+        x.isFinite
+        && y.isFinite
+    }
+    /// A Boolean value that indicates whether the vector contains any NaN values.
+    @inlinable public var isNaN: Bool {
+        x.isNaN
+        || y.isNaN
+    }
     
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
+    @inlinable public mutating func apply(_ pose: Pose2D) {
+        vector += pose.position.vector
+        rotate(by: pose.angle)
+    }
+
+//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+//        vector += scaledPose.position.vector
+//        rotate(by: scaledPose.rotation)
+//        vector *= scaledPose.scale
+//    }
+}
+
+extension Vector2D: Rotatable2D {
+    @inlinable public mutating func rotate(by angle: Angle2D) {
+        let newAngle = Angle2D.atan2(y: y, x: x) + angle
+        let length = self.length
+        
+        x = length * newAngle.cos
+        y = length * newAngle.sin
+    }
+    
+    @inlinable public mutating func flip(along axis: Axis2D) {
+        let newAngle = Angle2D.atan2(y: y, x: x).flipped(along: axis)
+        let length = self.length
+        
+        x = length * newAngle.cos
+        y = length * newAngle.sin
+    }
+}
+
+extension Vector2D: Scalable2D {
+    /// Scales the vector using the specified size structure.
     /// - Parameters:
-    ///     - other: The other vector value to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two vectors are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Vector2D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        x.isAlmostEqual(to: other.x, tolerance: tolerance)
-        && y.isAlmostEqual(to: other.y, tolerance: tolerance)
+    ///     - size: The size structure to scale using.
+    @inlinable public mutating func scale(by size: Size2D) {
+        assert(size.isFinite)
+        
+        vector *= size.vector
+    }
+    /// Scales the vector using the specified double-precision values.
+    /// - Parameters:
+    ///     - x: The double-precision value that specifies the scale for the x component.
+    ///     - y: The double-precision value that specifies the scale for the y component.
+    @inlinable public mutating func scaleBy(x: Double, y: Double) {
+        assert(x.isFinite && y.isFinite)
+        
+        vector *= SIMD2<Double>(x: x, y: y)
+    }
+    /// Uniformly scales the vector using the specified double-precision value.
+    /// - Parameters:
+    ///     - scale: The double-precision value that specifies the uniform scale.
+    @inlinable public mutating func uniformlyScale(by scale: Double) {
+        assert(scale.isFinite)
+        
+        vector *= scale
     }
 }
 
@@ -283,13 +377,13 @@ extension Vector2D: AdditiveArithmetic {
         v.vector *= lhs
         return v
     }
-//    /// Returns a new vector after applying the pose to the vector.
-//    /// - Parameters:
-//    ///     - lhs: The left-hand-side value.
-//    ///     - rhs: The right-hand-side value.
-//    @inlinable public static func * (lhs: Pose2D, rhs: Vector2D) -> Vector2D {
-//        rhs.applying(lhs)
-//    }
+    /// Returns a new vector after applying the pose to the vector.
+    /// - Parameters:
+    ///     - lhs: The left-hand-side value.
+    ///     - rhs: The right-hand-side value.
+    @inlinable public static func * (lhs: Pose2D, rhs: Vector2D) -> Vector2D {
+        rhs.applying(lhs)
+    }
     /// Multiplies a vector and a double-precision value, and stores the result in the left-hand-side variable.
     /// - Parameters:
     ///     - lhs: The left-hand-side value.
@@ -313,83 +407,6 @@ extension Vector2D: AdditiveArithmetic {
     ///     - rhs: The right-hand-side value.
     @inlinable public static func /= (lhs: inout Vector2D, rhs: Double) {
         lhs.vector /= rhs
-    }
-}
-
-extension Vector2D {//: Primitive2D {
-    /// A vector that contains the values 1, 0.
-    public static let right: Vector2D = .init(x: 1, y: 0)
-    /// A vector that contains the values 0, 1.
-    public static let up: Vector2D = .init(x: 0, y: 1)
-    /// A vector that contains all infinities.
-    public static let infinity: Vector2D = .init(x: .infinity, y: .infinity)
-    /// A vector that contains all zeros.
-    public static let zero: Vector2D = .init()
-
-    /// A Boolean value that indicates whether the vector is zero.
-    @inlinable public var isZero: Bool {
-        x.isZero
-        && y.isZero
-    }
-    /// A Boolean value that indicates whether all the components of the vector are finite.
-    @inlinable public var isFinite: Bool {
-        x.isFinite
-        && y.isFinite
-    }
-    /// A Boolean value that indicates whether the vector contains any NaN values.
-    @inlinable public var isNaN: Bool {
-        x.isNaN
-        || y.isNaN
-    }
-    
-//    @inlinable public mutating func apply(_ pose: Pose2D) {
-//        vector += pose.position.vector
-//        rotate(by: pose.rotation)
-//    }
-
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.rotation)
-//        vector *= scaledPose.scale
-//    }
-}
-
-//extension Vector2D: Rotatable2D {
-//    /// Rotates the vector by the specified quaternion.
-//    /// - Parameters:
-//    ///     - quaternion: The double-precision quaternion that specifies the rotation.
-//    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-//        assert(quaternion.length.isAlmostEqual(to: 1))
-//        
-//        vector = quaternion.act(vector)
-//    }
-//}
-
-extension Vector2D: Scalable2D {
-    /// Scales the vector using the specified size structure.
-    /// - Parameters:
-    ///     - size: The size structure to scale using.
-    public mutating func scale(by size: Size2D) {
-        assert(size.isFinite)
-        
-        vector *= size.vector
-    }
-    /// Scales the vector using the specified double-precision values.
-    /// - Parameters:
-    ///     - x: The double-precision value that specifies the scale for the x component.
-    ///     - y: The double-precision value that specifies the scale for the y component.
-    @inlinable public mutating func scaleBy(x: Double, y: Double) {
-        assert(x.isFinite && y.isFinite)
-        
-        vector *= SIMD2<Double>(x: x, y: y)
-    }
-    /// Uniformly scales the vector using the specified double-precision value.
-    /// - Parameters:
-    ///     - scale: The double-precision value that specifies the uniform scale.
-    @inlinable public mutating func uniformlyScale(by scale: Double) {
-        assert(scale.isFinite)
-        
-        vector *= scale
     }
 }
 

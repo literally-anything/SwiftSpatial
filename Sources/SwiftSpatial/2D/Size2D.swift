@@ -1,4 +1,5 @@
 public import simd
+public import RealModule
 
 /// A size that describes width and height in a 2D coordinate system.
 public struct Size2D: Sendable, Codable, Hashable {
@@ -54,36 +55,192 @@ public struct Size2D: Sendable, Codable, Hashable {
     @inlinable public init(_ xy: SIMD2<Double>) {
         self.init(vector: xy)
     }
-//    /// Creates a size structure from the specified 2D point.
-//    /// - Parameters:
-//    ///     - point: A point structure that specifies the dimensions.
-//    @inlinable public init(_ point: Point2D) {
-//        self.init(vector: point.vector)
-//    }
-//    /// Creates a size structure from the specified 2D vector.
-//    /// - Parameters:
-//    ///     - xyz: A vector that specifies the dimensions.
-//    @inlinable public init(_ xyz: Vector2D) {
-//        self.init(vector: xyz.vector)
-//    }
+    /// Creates a size structure from the specified 2D point.
+    /// - Parameters:
+    ///     - point: A point structure that specifies the dimensions.
+    @inlinable public init(_ point: Point2D) {
+        self.init(vector: point.vector)
+    }
+    /// Creates a size structure from the specified 2D vector.
+    /// - Parameters:
+    ///     - xyz: A vector that specifies the dimensions.
+    @inlinable public init(_ xyz: Vector2D) {
+        self.init(vector: xyz.vector)
+    }
     /// Creates a size structure from the specified double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the dimensions.
     public init(vector: SIMD2<Double>) {
         self.vector = vector
     }
+}
+
+extension Size2D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Size2D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        width.isApproximatelyEqual(to: other.width, relativeTolerance: relativeTolerance) &&
+        height.isApproximatelyEqual(to: other.height, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Size2D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        width.isApproximatelyEqual(to: other.width, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        height.isApproximatelyEqual(to: other.height, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Size2D: Primitive2D {
+    /// The size structure with the zero value.
+    public static let zero: Size2D = .init()
+    /// The size structure with width and height values of one.
+    public static let one: Size2D = .init(vector: .one)
+    /// The size structure with infinite width and height values.
+    public static let infinity: Size2D = .init(width: .infinity, height: .infinity)
     
-    /// Returns a Boolean value that indicates whether two sizes are approximately equal within a threshold.
+    /// A Boolean value that indicates whether the size is zero.
+    @inlinable public var isZero: Bool {
+        width.isZero
+        && height.isZero
+    }
+    /// A Boolean value that indicates whether all of the dimensions of the size structure are finite.
+    @inlinable public var isFinite: Bool {
+        width.isFinite
+        && height.isFinite
+    }
+    /// A Boolean value that indicates whether the size structure contains any NaN values.
+    @inlinable public var isNaN: Bool {
+        width.isNaN
+        || height.isNaN
+    }
+    
+    @inlinable public mutating func apply(_ pose: Pose2D) {
+        vector += pose.position.vector
+        self.rotate(by: pose.angle)
+    }
+    
+//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+//        vector += scaledPose.position.vector
+//        rotate(by: scaledPose.angle)
+//        vector *= scaledPose.scale
+//    }
+}
+
+extension Size2D: Scalable2D {
+    /// Scale using the specified size structure.
+    @inlinable public mutating func scale(by size: Size2D) {
+        assert(size.isFinite)
+        
+        vector *= size.vector
+    }
+    /// Scale using the specified double-precision values.
     /// - Parameters:
-    ///     - other: The other size to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two sizes are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Size3D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        width.isAlmostEqual(to: other.width, tolerance: tolerance)
-        && height.isAlmostEqual(to: other.height, tolerance: tolerance)
+    ///     - x: The double-precision value that specifies the scale along the width dimension.
+    ///     - y: The double-precision value that specifies the scale along the height dimension.
+    @inlinable public mutating func scaleBy(x: Double, y: Double) {
+        vector *= SIMD2<Double>(x: x, y: y)
+    }
+    /// Uniformly scale using the specified double-precision value.
+    /// - Parameters:
+    ///     - scale: The double-precision value that specifies the uniform scale.
+    @inlinable public mutating func uniformlyScale(by scale: Double) {
+        vector *= scale
+    }
+}
+
+extension Size2D: Rotatable2D {
+    @inlinable public mutating func rotate(by angle: Angle2D) {
+        let length = (vector * vector).sum().squareRoot()
+        let newAngle = angle + .atan2(y: height, x: width)
+        
+        width = length * newAngle.cos
+        height = length * newAngle.sin
+    }
+    
+    @inlinable public mutating func flip(along axis: Axis2D) {
+        switch axis {
+        case .x:
+            width = -width
+        case .y:
+            height = -height
+        }
+    }
+}
+
+extension Size2D: Volumetric2D {
+    /// Returns a Boolean value that indicates whether the size contains the specified size.
+    /// - Parameters:
+    ///     - other: The size that the function compares against.
+    /// - Returns: A Boolean value that indicates whether the size contains the specified size.
+    @inlinable public func contains(_ other: Size2D) -> Bool {
+        let mask = vector .>= other.vector
+        return all(mask)
+    }
+    
+    /// Returns a Boolean value that indicates whether the size contains the specified point.
+    /// - Parameters:
+    ///     - point: The point that the function compares against.
+    /// - Returns: A Boolean value that indicates whether the size contains the specified point.
+    @inlinable public func contains(point: Point2D) -> Bool {
+        let high = simd_max(vector, .zero)
+        let low = simd_min(vector, .zero)
+
+        let sizeMask = high .>= point.vector
+        let zeroMask = low .<= point.vector
+
+        let mask = sizeMask .& zeroMask
+        return all(mask)
+    }
+    
+    /// Returns a Boolean value that indicates whether the size contains any of the the specified points
+    /// - Parameters:
+    ///     - points: The array of points that the function compares against.
+    /// - Returns: A Boolean value that indicates whether the size contains at least one of the specified points.
+    @inlinable public func contains(anyOf points: [Point2D]) -> Bool {
+        for point in points {
+            if contains(point: point) {
+                return true
+            }
+        }
+        return false
+    }
+    
+    /// Sets the size to the intersection of itself and the specified size.
+    /// - Parameters:
+    ///     - other: The size that the function compares against.
+    @inlinable public mutating func formIntersection(_ other: Size2D) {
+        if width.sign == other.width.sign &&
+           height.sign == other.height.sign {
+            vector = simd_min(simd_abs(vector), simd_abs(other.vector))
+        }
+    }
+    /// Sets the size to the union of itself and the specified size.
+    /// - Parameters:
+    ///     - other: The size that the function compares against.
+    @inlinable public mutating func formUnion(_ other: Size2D) {
+        let min = simd_min(vector, other.vector)
+        let max = simd_max(vector, other.vector)
+        vector = max - min
+    }
+
+    /// Returns the intersection of two sizes.
+    /// - Parameters:
+    ///     - other: The size that the function compares against.
+    /// - Returns: A new size that is the intersection of two sizes.
+    @inlinable public func intersection(_ other: Size2D) -> Size2D? {
+        if width.sign == other.width.sign &&
+           height.sign == other.height.sign {
+            return .init(vector: simd_min(simd_abs(vector), simd_abs(other.vector)))
+        }
+        return nil
+    }
+    /// Returns the smallest size that contains two sizes.
+    /// - Parameters:
+    ///     - other: The size that the function compares against.
+    /// - Returns: A new size that is the union of two sizes.
+    @inlinable public func union(_ other: Size2D) -> Size2D {
+        var s = self
+        s.formUnion(other)
+        return s
     }
 }
 
@@ -110,13 +267,13 @@ extension Size2D: AdditiveArithmetic {
     @inlinable public static func += (lhs: inout Size2D, rhs: Size2D) {
         lhs.vector += rhs.vector
     }
-//    /// Adds a size and a vector, and stores the result in the left-hand-side variable.
-//    /// - Parameters:
-//    ///     - lhs: The left-hand-side value.
-//    ///     - rhs: The right-hand-side value.
-//    @inlinable public static func += (lhs: inout Size2D, rhs: Vector2D) {
-//        lhs.vector += rhs.vector
-//    }
+    /// Adds a size and a vector, and stores the result in the left-hand-side variable.
+    /// - Parameters:
+    ///     - lhs: The left-hand-side value.
+    ///     - rhs: The right-hand-side value.
+    @inlinable public static func += (lhs: inout Size2D, rhs: Vector2D) {
+        lhs.vector += rhs.vector
+    }
     
     /// Returns a size that’s the element-wise negation of the size.
     /// - Parameters:
@@ -142,13 +299,13 @@ extension Size2D: AdditiveArithmetic {
     @inlinable public static func -= (lhs: inout Size2D, rhs: Size2D) {
         lhs.vector -= rhs.vector
     }
-//    /// Subtracts a size from a vector and stores the difference in the left-hand-side variable.
-//    /// - Parameters:
-//    ///     - lhs: The left-hand-side value.
-//    ///     - rhs: The right-hand-side value.
-//    @inlinable public static func -= (lhs: inout Size2D, rhs: Vector2D) {
-//        lhs.vector -= rhs.vector
-//    }
+    /// Subtracts a size from a vector and stores the difference in the left-hand-side variable.
+    /// - Parameters:
+    ///     - lhs: The left-hand-side value.
+    ///     - rhs: The right-hand-side value.
+    @inlinable public static func -= (lhs: inout Size2D, rhs: Vector2D) {
+        lhs.vector -= rhs.vector
+    }
     
     /// Returns a size that’s the product of a size and a scalar value.
     /// - Parameters:
@@ -168,13 +325,13 @@ extension Size2D: AdditiveArithmetic {
         s *= lhs
         return s
     }
-//    /// Returns a new size after applying the pose to the size.
-//    /// - Parameters:
-//    ///     - lhs: The left-hand-side value.
-//    ///     - rhs: The right-hand-side value.
-//    @inlinable public static func * (lhs: Pose2D, rhs: Size2D) -> Size2D {
-//        rhs.applying(lhs)
-//    }
+    /// Returns a new size after applying the pose to the size.
+    /// - Parameters:
+    ///     - lhs: The left-hand-side value.
+    ///     - rhs: The right-hand-side value.
+    @inlinable public static func * (lhs: Pose2D, rhs: Size2D) -> Size2D {
+        rhs.applying(lhs)
+    }
     /// Multiplies a size and a double-precision value, and stores the result in the left-hand-side variable.
     /// - Parameters:
     ///     - lhs: The left-hand-side value.
@@ -194,153 +351,6 @@ extension Size2D: AdditiveArithmetic {
     ///     - rhs: The right-hand-side value.
     @inlinable public static func /= (lhs: inout Size2D, rhs: Double) {
         lhs.vector /= rhs
-    }
-}
-
-extension Size2D {//: Primitive2D {
-    /// The size structure with the zero value.
-    public static let zero: Size2D = .init()
-    /// The size structure with width and height values of one.
-    public static let one: Size2D = .init(vector: .one)
-    /// The size structure with infinite width and height values.
-    public static let infinity: Size2D = .init(width: .infinity, height: .infinity)
-    
-    /// A Boolean value that indicates whether the size is zero.
-    @inlinable public var isZero: Bool {
-        width.isZero
-        && height.isZero
-    }
-    /// A Boolean value that indicates whether all of the dimensions of the size structure are finite.
-    @inlinable public var isFinite: Bool {
-        width.isFinite
-        && height.isFinite
-    }
-    /// A Boolean value that indicates whether the size structure contains any NaN values.
-    @inlinable public var isNaN: Bool {
-        width.isNaN
-        || height.isNaN
-    }
-    
-//    @inlinable public mutating func apply(_ pose: Pose2D) {
-//        vector += pose.position.vector
-//        self.rotate(by: pose.rotation)
-//    }
-    
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.rotation)
-//        vector *= scaledPose.scale
-//    }
-}
-
-extension Size2D: Scalable2D {
-    /// Scale using the specified size structure.
-    @inlinable public mutating func scale(by size: Size2D) {
-        assert(size.isFinite)
-        
-        vector *= size.vector
-    }
-    /// Scale using the specified double-precision values.
-    /// - Parameters:
-    ///     - x: The double-precision value that specifies the scale along the width dimension.
-    ///     - y: The double-precision value that specifies the scale along the height dimension.
-    @inlinable public mutating func scaleBy(x: Double, y: Double) {
-        assert(x.isFinite && y.isFinite)
-        
-        vector *= SIMD2<Double>(x: x, y: y)
-    }
-    /// Uniformly scale using the specified double-precision value.
-    /// - Parameters:
-    ///     - scale: The double-precision value that specifies the uniform scale.
-    @inlinable public mutating func uniformlyScale(by scale: Double) {
-        assert(scale.isFinite)
-        
-        vector *= scale
-    }
-}
-
-//extension Size2D: Rotatable2D {
-//    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-//        assert(quaternion.length.isAlmostEqual(to: 1))
-//        
-//        vector = quaternion.act(vector)
-//    }
-//}w9o
-
-extension Size2D {//: Volumetric2D {
-    /// Returns a Boolean value that indicates whether the size contains the specified size.
-    /// - Parameters:
-    ///     - other: The size that the function compares against.
-    /// - Returns: A Boolean value that indicates whether the size contains the specified size.
-    @inlinable public func contains(_ other: Size2D) -> Bool {
-        assert(other.isFinite)
-        
-        let mask = vector .>= other.vector
-        return all(mask)
-    }
-    
-    /// Returns a Boolean value that indicates whether the size contains the specified point.
-    /// - Parameters:
-    ///     - point: The point that the function compares against.
-    /// - Returns: A Boolean value that indicates whether the size contains the specified point.
-//    @inlinable public func contains(point: Point2D) -> Bool {
-//        assert(point.isFinite && !point.isNaN)
-//        
-//        let high = simd_max(vector, .zero)
-//        let low = simd_min(vector, .zero)
-//        
-//        let sizeMask = high .>= point.vector
-//        let zeroMask = low .<= point.vector
-//        
-//        let mask = sizeMask .& zeroMask
-//        return all(mask)
-//    }
-    
-    /// Returns a Boolean value that indicates whether the size contains any of the the specified points
-    /// - Parameters:
-    ///     - points: The array of points that the function compares against.
-    /// - Returns: A Boolean value that indicates whether the size contains at least one of the specified points.
-//    @inlinable public func contains(anyOf points: [Point3D]) -> Bool {
-//        assert(!points.isEmpty)
-//        
-//        for point in points {
-//            if contains(point: point) {
-//                return true
-//            }
-//        }
-//        return false
-//    }
-    
-    /// Sets the size to the intersection of itself and the specified size.
-    /// - Parameters:
-    ///     - other: The size that the function compares against.
-    @inlinable public mutating func formIntersection(_ other: Size2D) {
-        vector = simd_min(vector, other.vector)
-    }
-    /// Sets the size to the union of itself and the specified size.
-    /// - Parameters:
-    ///     - other: The size that the function compares against.
-    @inlinable public mutating func formUnion(_ other: Size2D) {
-        vector = simd_max(vector, other.vector)
-    }
-    
-    /// Returns the intersection of two sizes.
-    /// - Parameters:
-    ///     - other: The size that the function compares against.
-    /// - Returns: A new size that is the intersection of two sizes.
-    @inlinable public func intersection(_ other: Size2D) -> Size2D? {
-        var s = self
-        s.formIntersection(other)
-        return s
-    }
-    /// Returns the smallest size that contains two sizes.
-    /// - Parameters:
-    ///     - other: The size that the function compares against.
-    /// - Returns: A new size that is the union of two sizes.
-    @inlinable public func union(_ other: Size2D) -> Size2D {
-        var s = self
-        s.formUnion(other)
-        return s
     }
 }
 

@@ -157,14 +157,12 @@ extension Vector2D: ExpressibleByArrayLiteral {
 extension Vector2D: ApproximatelyEquatable {
     @inlinable public func isApproximatelyEqual(to other: Vector2D,
                                                 relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
-        x.isApproximatelyEqual(to: other.x, relativeTolerance: relativeTolerance) &&
-        y.isApproximatelyEqual(to: other.y, relativeTolerance: relativeTolerance)
+        dot(other).isApproximatelyEqual(to: 1, relativeTolerance: relativeTolerance)
     }
 
     @inlinable public func isApproximatelyEqual(to other: Vector2D,
                                                 absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
-        x.isApproximatelyEqual(to: other.x, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
-        y.isApproximatelyEqual(to: other.y, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+        dot(other).isApproximatelyEqual(to: 1, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
     }
 }
 
@@ -199,11 +197,11 @@ extension Vector2D: Primitive2D {
         rotate(by: pose.angle)
     }
 
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.rotation)
-//        vector *= scaledPose.scale
-//    }
+    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+        vector += scaledPose.position.vector
+        rotate(by: scaledPose.angle)
+        vector *= scaledPose.scale
+    }
 }
 
 extension Vector2D: Rotatable2D {

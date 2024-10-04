@@ -71,10 +71,10 @@ public struct Angle2D: Sendable, Codable, Hashable {
     
     /// Normalizes the angle between –180° and 180.0°.
     @inlinable public mutating func normalize() {
-        radians = Foundation.atan2(sin, cos)
+        radians = (radians + .pi).truncatingRemainder(dividingBy: (.pi * 2)) + .pi
     }
     /// Inverts the angle.
-    /// The new angle is 180º rotated..
+    /// The new angle is 180º rotated.
     @inlinable public mutating func invert() {
         if radians >= 0 {
             radians -= .pi

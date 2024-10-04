@@ -1,4 +1,5 @@
 public import simd
+public import RealModule
 
 /// A rotation in three dimensions.
 public struct Rotation3D: Sendable, Hashable, Codable {
@@ -65,7 +66,7 @@ public struct Rotation3D: Sendable, Hashable, Codable {
     }
     /// A Boolean representing whether the quatenion is a valid rotation.
     @inlinable public var valid: Bool {
-        quaternion.length.isAlmostEqual(to: 1)
+        quaternion.length.isApproximatelyEqual(to: 1)
     }
     
     /// Creates a rotation structure using an identity quaternion.
@@ -150,8 +151,8 @@ public struct Rotation3D: Sendable, Hashable, Codable {
     ///     - forward: The forward vector.
     ///     - up: The up vector.
     @inlinable public init(forward: Vector3D, up: Vector3D) {
-        assert(forward.length.isAlmostEqual(to: 1), "Forward vector length is not 1: \(forward.length)")
-        assert(up.length.isAlmostEqual(to: 1), "Up vector length is not 1: \(up.length)")
+        assert(forward.length.isApproximatelyEqual(to: 1), "Forward vector length is not 1: \(forward.length)")
+        assert(up.length.isApproximatelyEqual(to: 1), "Up vector length is not 1: \(up.length)")
         
         let side = forward.cross(up)
         let up_norm = forward.cross(side)
@@ -162,33 +163,8 @@ public struct Rotation3D: Sendable, Hashable, Codable {
     /// Creates a rotation from the specified double-precision quaternion.
     /// - Parameters:
     ///     - quaternion: A double-precision quaternion that specifies the rotation.
-    public init(quaternion: simd_quatd) {
+    @inlinable public init(quaternion: simd_quatd) {
         self.quaternion = quaternion
-    }
-    
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
-    /// - Parameters:
-    ///     - other: The other rotation value to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two rotaions are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Rotation3D,
-        tolerance: Double = sqrt(.ulpOfOne)
-    ) -> Bool {
-        let normal = x.isAlmostEqual(to: other.x, tolerance: tolerance)
-                     && y.isAlmostEqual(to: other.y, tolerance: tolerance)
-                     && z.isAlmostEqual(to: other.z, tolerance: tolerance)
-                     && w.isAlmostEqual(to: other.w, tolerance: tolerance)
-        if normal {
-            return true
-        }
-        
-        let inverse = (-x).isAlmostEqual(to: other.x, tolerance: tolerance)
-                      && (-y).isAlmostEqual(to: other.y, tolerance: tolerance)
-                      && (-z).isAlmostEqual(to: other.z, tolerance: tolerance)
-                      && (-w).isAlmostEqual(to: other.w, tolerance: tolerance)
-        
-        return inverse
     }
     
     /// Invert the rotation by getting the inverse of the quaternion.
@@ -201,6 +177,13 @@ public struct Rotation3D: Sendable, Hashable, Codable {
         quaternion = quaternion.normalized
     }
     
+    /// Calculates the dot product of the rotation and the specified rotation.
+    /// - Parameters:
+    ///     - other: The second rotation.
+    /// - Returns: The dot product of the rotation and the specified rotation.
+    @inlinable public func dot(_ other: Rotation3D) -> Double {
+        simd.dot(other.quaternion, quaternion)
+    }
     /// Returns the spherical linear interpolation along either the shortest or the longest arc between two rotations.
     /// - Parameters:
     ///     - from: The starting rotation.
@@ -358,7 +341,7 @@ public struct Rotation3D: Sendable, Hashable, Codable {
         /// - Parameters:
         ///     - angles: A three-element, double-precision vector that specifies the Euler angles.
         ///     - order: The Euler angle order.
-        public init(angles: SIMD3<Double>, order: Order) {
+        @inlinable public init(angles: SIMD3<Double>, order: Order) {
             self.angles = angles
             self.order = order
         }
@@ -373,6 +356,53 @@ public struct Rotation3D: Sendable, Hashable, Codable {
             case xyz
             case zxy
         }
+    }
+}
+
+extension Rotation3D: ExpressibleByArrayLiteral {
+    /// Initialize the rotation using an array of quaternion components.
+    /// The array should only ever be of length 4.
+    /// - Parameters:
+    ///     - arrayLiteral: The array of length 4 that defines the x, y, z, and w components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 4, "Rotation3Dh only has 4 elements.")
+
+        self.init(quaternion: .init(vector:
+                .init(x: elements[0], y: elements[1], z: elements[2], w: elements[3])
+        ))
+    }
+}
+
+extension Rotation3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Rotation3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        dot(other).isApproximatelyEqual(to: 1, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Rotation3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        dot(other).isApproximatelyEqual(to: 1, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Rotation3D {
+    /// The identity rotation.
+    public static let identity: Rotation3D = .init()
+    
+    /// A Boolean value that indicates whether the rotation is the identity rotation.
+    @inlinable public var isIdentity: Bool {
+        quaternion == Self.identity.quaternion
+    }
+}
+
+extension Rotation3D: Rotatable3D {
+    /// Applies the specified quaternion.
+    /// - Parameters:
+    ///     - quaternion: The quaternion that defines the rotation’s angle and axis.
+    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
+        assert(quaternion.length.isApproximatelyEqual(to: 1))
+        
+        self.quaternion *= quaternion
     }
 }
 
@@ -424,27 +454,6 @@ extension Rotation3D {
     ///     - rhs: The right-hand-side value.
     @inlinable public static func *= (lhs: inout Rotation3D, rhs: Rotation3D) {
         lhs.quaternion *= rhs.quaternion
-    }
-}
-
-extension Rotation3D {
-    /// The identity rotation.
-    public static let identity: Rotation3D = .init()
-    
-    /// A Boolean value that indicates whether the rotation is the identity rotation.
-    @inlinable public var isIdentity: Bool {
-        quaternion == Self.identity.quaternion
-    }
-}
-
-extension Rotation3D: Rotatable3D {
-    /// Applies the specified quaternion.
-    /// - Parameters:
-    ///     - quaternion: The quaternion that defines the rotation’s angle and axis.
-    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-        assert(quaternion.length.isAlmostEqual(to: 1))
-        
-        self.quaternion *= quaternion
     }
 }
 

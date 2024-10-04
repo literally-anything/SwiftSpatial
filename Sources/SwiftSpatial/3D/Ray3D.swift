@@ -4,7 +4,7 @@ public import simd
 public struct Ray3D: Sendable, Codable, Hashable {
     /// The origin of the ray.
     public var origin: Point3D
-    /// var direction: Vector3D
+    /// The direction of the ray.
     public var direction: Vector3D
     
     /// Creates a ray structure.
@@ -32,9 +32,23 @@ public struct Ray3D: Sendable, Codable, Hashable {
     /// - Parameters:
     ///     - origin: A point that specifies the ray’s origin.
     ///     - direction: A vector that specifies the ray’s direction.
-    public init(origin: Point3D, direction: Vector3D) {
+    @inlinable public init(origin: Point3D, direction: Vector3D) {
         self.origin = origin
         self.direction = direction
+    }
+}
+
+extension Ray3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Ray3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        origin.isApproximatelyEqual(to: other.origin, relativeTolerance: relativeTolerance) &&
+        direction.isApproximatelyEqual(to: other.direction, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Ray3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        origin.isApproximatelyEqual(to: other.origin, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        direction.isApproximatelyEqual(to: other.direction, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
     }
 }
 

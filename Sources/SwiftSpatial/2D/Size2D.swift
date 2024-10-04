@@ -70,7 +70,7 @@ public struct Size2D: Sendable, Codable, Hashable {
     /// Creates a size structure from the specified double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the dimensions.
-    public init(vector: SIMD2<Double>) {
+    @inlinable public init(vector: SIMD2<Double>) {
         self.vector = vector
     }
 }
@@ -130,11 +130,11 @@ extension Size2D: Primitive2D {
         self.rotate(by: pose.angle)
     }
     
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.angle)
-//        vector *= scaledPose.scale
-//    }
+    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+        vector += scaledPose.position.vector
+        rotate(by: scaledPose.angle)
+        vector *= scaledPose.scale
+    }
 }
 
 extension Size2D: Scalable2D {

@@ -1,4 +1,5 @@
 public import simd
+public import RealModule
 
 /// A size that describes width, height, and depth in a 3D coordinate system.
 public struct Size3D: Sendable, Codable, Hashable {
@@ -81,22 +82,36 @@ public struct Size3D: Sendable, Codable, Hashable {
     /// Creates a size structure from the specified double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the dimensions.
-    public init(vector: SIMD3<Double>) {
+    @inlinable public init(vector: SIMD3<Double>) {
         self.vector = vector
     }
-    
-    /// Returns a Boolean value that indicates whether two sizes are approximately equal within a threshold.
+}
+
+extension Size3D: ExpressibleByArrayLiteral {
+    /// Initialize the size using an array of components.
+    /// The array should only ever be of length 3.
     /// - Parameters:
-    ///     - other: The other size to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two sizes are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Size3D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        width.isAlmostEqual(to: other.width, tolerance: tolerance)
-        && height.isAlmostEqual(to: other.height, tolerance: tolerance)
-        && depth.isAlmostEqual(to: other.depth, tolerance: tolerance)
+    ///     - arrayLiteral: The array of length 3 that defines the x, y, and z components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 3, "Size3D only has 3 elements.")
+
+        self.init(width: elements[0], height: elements[1], depth: elements[2])
+    }
+}
+
+extension Size3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Size3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        width.isApproximatelyEqual(to: other.width, relativeTolerance: relativeTolerance) &&
+        height.isApproximatelyEqual(to: other.height, relativeTolerance: relativeTolerance) &&
+        depth.isApproximatelyEqual(to: other.depth, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Size3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        width.isApproximatelyEqual(to: other.width, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        height.isApproximatelyEqual(to: other.height, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        depth.isApproximatelyEqual(to: other.depth, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
     }
 }
 
@@ -290,7 +305,7 @@ extension Size3D: Scalable3D {
 
 extension Size3D: Rotatable3D {
     @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-        assert(quaternion.length.isAlmostEqual(to: 1))
+//        assert(quaternion.length.isAlmostEqual(to: 1))
         
         vector = quaternion.act(vector)
     }

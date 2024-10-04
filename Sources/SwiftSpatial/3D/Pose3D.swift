@@ -1,4 +1,5 @@
 public import simd
+public import RealModule
 
 /// A structure that contains a 3D position and a 3D rotation.
 public struct Pose3D: Sendable, Codable, Hashable {
@@ -100,22 +101,9 @@ public struct Pose3D: Sendable, Codable, Hashable {
     /// - Parameters:
     ///     - position: A point structure that specifies the position of the pose.
     ///     - rotation: A rotation structure that specifies the rotation of the pose.
-    public init(position: Point3D, rotation: Rotation3D) {
+    @inlinable public init(position: Point3D, rotation: Rotation3D) {
         self.position = position
         self.rotation = rotation
-    }
-    
-    /// Returns a Boolean value that indicates whether two poses are equal within a specified tolerance.
-    /// - Parameters:
-    ///     - other: The right-hand side value.
-    ///     - tolerance: A double-precision value that specifies the tolerance.
-    /// - Returns: A Boolean indicating whether the two poses are equal within a specified tolerance.
-    @inlinable public func isApproximatelyEqual(
-        to other: Pose3D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        position.isApproximatelyEqual(to: other.position, tolerance: tolerance)
-        && rotation.isApproximatelyEqual(to: other.rotation, tolerance: tolerance)
     }
     
     /// Sets the pose to it's inverse.
@@ -160,10 +148,46 @@ public struct Pose3D: Sendable, Codable, Hashable {
         let l2 = simd_length(matrix.columns.1.to3())
         let l3 = simd_length(matrix.columns.2.to3())
         
-        if l1.isAlmostEqual(to: l2) && l2.isAlmostEqual(to: l3) {
+        if l1.isApproximatelyEqual(to: l2) && l2.isApproximatelyEqual(to: l3) {
             return l1
         }
         return .nan
+    }
+}
+
+extension Pose3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Pose3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        position.isApproximatelyEqual(to: other.position, relativeTolerance: relativeTolerance) &&
+        rotation.isApproximatelyEqual(to: other.rotation, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Pose3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        position.isApproximatelyEqual(to: other.position, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        rotation.isApproximatelyEqual(to: other.rotation, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Pose3D {
+    /// The identity pose.
+    public static let identity: Pose3D = .init()
+    
+    /// A Boolean value that indicates whether the pose is the identity pose.
+    @inlinable public var isIdentity: Bool {
+        position.isZero && rotation.isIdentity
+    }
+}
+
+extension Pose3D: Translatable3D {
+    @inlinable public mutating func translate(by vector: Vector3D) {
+        position.translate(by: vector)
+    }
+}
+
+extension Pose3D: Rotatable3D {
+    public mutating func rotate(by quaternion: simd_quatd) {
+        rotation.rotate(by: quaternion)
     }
 }
 
@@ -204,28 +228,6 @@ extension Pose3D {
     ///     - transform: A scaled pose to concatenate.
     @inlinable public func concatenating(_ transform: ScaledPose3D) -> ScaledPose3D {
         transform * .init(self)
-    }
-}
-
-extension Pose3D {
-    /// The identity pose.
-    public static let identity: Pose3D = .init()
-    
-    /// A Boolean value that indicates whether the pose is the identity pose.
-    @inlinable public var isIdentity: Bool {
-        position.isZero && rotation.isIdentity
-    }
-}
-
-extension Pose3D: Translatable3D {
-    @inlinable public mutating func translate(by vector: Vector3D) {
-        position.translate(by: vector)
-    }
-}
-
-extension Pose3D: Rotatable3D {
-    public mutating func rotate(by quaternion: simd_quatd) {
-        rotation.rotate(by: quaternion)
     }
 }
 

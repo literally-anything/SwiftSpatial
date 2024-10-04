@@ -1,5 +1,6 @@
 public import Foundation
 public import simd
+public import RealModule
 
 /// A three-component vector.
 public struct Vector3D: Sendable, Codable, Hashable {
@@ -95,7 +96,7 @@ public struct Vector3D: Sendable, Codable, Hashable {
     /// Creates a vector from the specified double-percision vector.
     /// - Parameters:
     ///     - vector: A double-percision vector that specifies the component values.
-    public init(vector: SIMD3<Double>) {
+    @inlinable public init(vector: SIMD3<Double>) {
         self.vector = vector
     }
     
@@ -143,19 +144,29 @@ public struct Vector3D: Sendable, Codable, Hashable {
     @inlinable public func reflected(_ normal: Vector3D) -> Vector3D {
         .init(vector: vector - 2 * dot(normal) * normal.vector)
     }
-    
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
+}
+
+extension Vector3D: ExpressibleByArrayLiteral {
+    /// Initialize the vector using an array of components.
+    /// The array should only ever be of length 3.
     /// - Parameters:
-    ///     - other: The other vector value to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two vectors are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Vector3D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        x.isAlmostEqual(to: other.x, tolerance: tolerance)
-        && y.isAlmostEqual(to: other.y, tolerance: tolerance)
-        && z.isAlmostEqual(to: other.z, tolerance: tolerance)
+    ///     - arrayLiteral: The array of length 3 that defines the x, y, and z components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 3, "Vector3D only has 3 elements.")
+
+        self.init(x: elements[0], y: elements[1], z: elements[2])
+    }
+}
+
+extension Vector3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Vector3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        dot(other).isApproximatelyEqual(to: 1, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Vector3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        dot(other).isApproximatelyEqual(to: 1, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
     }
 }
 
@@ -389,7 +400,7 @@ extension Vector3D: Rotatable3D {
     /// - Parameters:
     ///     - quaternion: The double-precision quaternion that specifies the rotation.
     @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-        assert(quaternion.length.isAlmostEqual(to: 1))
+//        assert(quaternion.length.isAlmostEqual(to: 1))
         
         vector = quaternion.act(vector)
     }

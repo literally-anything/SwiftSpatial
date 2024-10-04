@@ -1,3 +1,5 @@
+public import RealModule
+
 /// A 3D rotation axis.
 public struct RotationAxis3D: Sendable, Codable, Hashable {
     /// A simd three-element vector that contains the x-, y-, and z-coordinate values.
@@ -61,8 +63,36 @@ public struct RotationAxis3D: Sendable, Codable, Hashable {
     /// Creates a rotation axis from a three-element double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the coordinates.
-    public init(vector: SIMD3<Double>) {
+    @inlinable public init(vector: SIMD3<Double>) {
         self.vector = vector
+    }
+}
+
+extension RotationAxis3D: ExpressibleByArrayLiteral {
+    /// Initialize the rotation axis using an array of components.
+    /// The array should only ever be of length 3.
+    /// - Parameters:
+    ///     - arrayLiteral: The array of length 3 that defines the x, y, and z components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 3, "RotationAxis3D only has 3 elements.")
+
+        self.init(x: elements[0], y: elements[1], z: elements[2])
+    }
+}
+
+extension RotationAxis3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: RotationAxis3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        x.isApproximatelyEqual(to: other.x, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, relativeTolerance: relativeTolerance) &&
+        z.isApproximatelyEqual(to: other.z, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: RotationAxis3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        x.isApproximatelyEqual(to: other.x, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        z.isApproximatelyEqual(to: other.z, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
     }
 }
 

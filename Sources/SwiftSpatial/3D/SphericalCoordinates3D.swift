@@ -60,16 +60,6 @@ public struct SphericalCoordinates3D: Sendable, Codable, Hashable {
 //        let squared = vector * vector
 //        let squaredLength = sqrt(squared.sum())
         let squaredLength = sqrt(pow(vector.x, 2) + pow(vector.y, 2) + pow(vector.z, 2))
-        print(vector.x)
-        print(vector.y)
-        print(vector.z)
-        print(squaredLength)
-        print("In")
-        print(vector.y / squaredLength)
-        print(acos(vector.y / squaredLength))
-        print("Az")
-        print(atan2(vector.z, vector.x))
-        print("Done")
         self.init(radius: squaredLength,
                   inclination: .init(radians: acos(vector.y / squaredLength)),
                   azimuth: .init(radians: atan2(vector.z, vector.x)))
@@ -79,7 +69,7 @@ public struct SphericalCoordinates3D: Sendable, Codable, Hashable {
     ///     - radius: The distance from the origin.
     ///     - inclination: The angle of inclination.
     ///     - azimuth: The azimuth angle.
-    public init(radius: Double, inclination: Angle2D, azimuth: Angle2D) {
+    @inlinable public init(radius: Double, inclination: Angle2D, azimuth: Angle2D) {
         self.radius = radius
         self.inclination = inclination
         self.azimuth = azimuth

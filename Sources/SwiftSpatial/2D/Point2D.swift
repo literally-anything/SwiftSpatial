@@ -138,11 +138,11 @@ extension Point2D: Primitive2D {
         self.rotate(by: pose.angle)
     }
     
-//    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
-//        vector += scaledPose.position.vector
-//        rotate(by: scaledPose.rotation)
-//        vector *= scaledPose.scale
-//    }
+    @inlinable public mutating func apply(_ scaledPose: ScaledPose2D) {
+        vector += scaledPose.position.vector
+        rotate(by: scaledPose.angle)
+        vector *= scaledPose.scale
+    }
 }
 
 extension Point2D: Translatable2D {

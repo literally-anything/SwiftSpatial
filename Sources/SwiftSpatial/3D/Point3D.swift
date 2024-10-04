@@ -1,4 +1,5 @@
 public import simd
+public import RealModule
 
 /// A point in a 3D coordinate system.
 public struct Point3D: Sendable, Codable, Hashable {
@@ -74,7 +75,7 @@ public struct Point3D: Sendable, Codable, Hashable {
     /// Creates a point from the specified double-precision vector.
     /// - Parameters:
     ///     - vector: A double-precision vector that specifies the coordinates.
-    public init(vector: SIMD3<Double>) {
+    @inlinable public init(vector: SIMD3<Double>) {
         self.vector = vector
     }
     
@@ -86,19 +87,121 @@ public struct Point3D: Sendable, Codable, Hashable {
         let difference = other.vector - vector
         return (difference * difference).sum().squareRoot()
     }
-    
-    /// Returns a Boolean value that indicates whether two values are approximately equal within a threshold.
+}
+
+extension Point3D: ExpressibleByArrayLiteral {
+    /// Initialize the point using an array of components.
+    /// The array should only ever be of length 3.
     /// - Parameters:
-    ///     - other: The other point value to compare with.
-    ///     - tolerance: The tolerance for what is considered equal.
-    /// - Returns: A Boolean indicating whether the two point are approximately equal.
-    @inlinable public func isApproximatelyEqual(
-        to other: Point3D,
-        tolerance: Double = .ulpOfOne.squareRoot()
-    ) -> Bool {
-        x.isAlmostEqual(to: other.x, tolerance: tolerance)
-        && y.isAlmostEqual(to: other.y, tolerance: tolerance)
-        && z.isAlmostEqual(to: other.z, tolerance: tolerance)
+    ///     - arrayLiteral: The array of length 3 that defines the x, y, and z components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 3, "Point3D only has 3 elements.")
+
+        self.init(x: elements[0], y: elements[1], z: elements[2])
+    }
+}
+
+extension Point3D: ApproximatelyEquatable {
+    @inlinable public func isApproximatelyEqual(to other: Point3D,
+                                                relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {
+        x.isApproximatelyEqual(to: other.x, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, relativeTolerance: relativeTolerance) &&
+        z.isApproximatelyEqual(to: other.z, relativeTolerance: relativeTolerance)
+    }
+
+    @inlinable public func isApproximatelyEqual(to other: Point3D,
+                                                absoluteTolerance: Double, relativeTolerance: Double = 0) -> Bool {
+        x.isApproximatelyEqual(to: other.x, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        y.isApproximatelyEqual(to: other.y, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance) &&
+        z.isApproximatelyEqual(to: other.z, absoluteTolerance: absoluteTolerance, relativeTolerance: relativeTolerance)
+    }
+}
+
+extension Point3D: Primitive3D {
+    /// The point with infinite x-, y-, and z-coordinate values.
+    public static let infinity: Point3D = .init(x: .infinity, y: .infinity, z: .infinity)
+    /// The point with the zero value.
+    public static let zero: Point3D = .init()
+
+    /// A Boolean value that indicates whether the point is zero.
+    @inlinable public var isZero: Bool {
+        x.isZero
+        && y.isZero
+        && z.isZero
+    }
+    /// A Boolean value that indicates whether all of the coordinates of the point are finite.
+    @inlinable public var isFinite: Bool {
+        x.isFinite
+        && y.isFinite
+        && z.isFinite
+    }
+    /// A Boolean value that indicates whether the point contains any NaN values.
+    @inlinable public var isNaN: Bool {
+        x.isNaN
+        || y.isNaN
+        || z.isNaN
+    }
+    
+    @inlinable public mutating func apply(_ pose: Pose3D) {
+        vector += pose.position.vector
+        self.rotate(by: pose.rotation)
+    }
+    
+    @inlinable public mutating func apply(_ scaledPose: ScaledPose3D) {
+        vector += scaledPose.position.vector
+        rotate(by: scaledPose.rotation)
+        vector *= scaledPose.scale
+    }
+}
+
+extension Point3D: Translatable3D {
+    /// Offsets the point by the specified vector.
+    /// - Parameters:
+    ///     - vector: The vector that defines the translation.
+    @inlinable public mutating func translate(by vector: Vector3D) {
+        assert(vector.isFinite)
+        
+        self += vector
+    }
+}
+
+extension Point3D: Rotatable3D {
+    /// Rotates the point by the specified quaternion.
+    /// - Parameters:
+    ///     - quaternion: The double-precision quaternion that specifies the rotation.
+    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
+        rotate(by: quaternion, around: .zero)
+    }
+    /// Rotates the point by a quaternion around the specified point.
+    /// - Parameters:
+    ///     - quaternion: The double-precision quaternion that specifies the rotation.
+    ///     - pivot: A point that defines the rotation pivot.
+    @inlinable public mutating func rotate(
+        by quaternion: simd_quatd,
+        around pivot: Point3D
+    ) {
+        vector = quaternion.act(vector - pivot.vector) + pivot.vector
+    }
+    
+    /// Returns a point that results from rotating with the specified quaternion.
+    /// - Parameters:
+    ///     - quaternion: The double-precision quaternion that specifies the rotation.
+    /// - Returns: The point that results from rotating with the specified quaternion.
+    @inlinable public func rotated(by quaternion: simd_quatd) -> Point3D {
+        rotated(by: quaternion, around: .zero)
+    }
+    /// Returns a point that results from rotating with a quaternion around the specified point.
+    /// - Parameters:
+    ///     - quaternion: The double-precision quaternion that specifies the rotation.
+    ///     - pivot: A point that defines the rotation pivot.
+    /// - Returns: The point that results from rotating with the specified quaternion.
+    @inlinable public func rotated(
+        by quaternion: simd_quatd,
+        around pivot: Point3D
+    ) -> Point3D {
+        var p = self
+        p.rotate(by: quaternion, around: pivot)
+        return p
     }
 }
 
@@ -248,96 +351,6 @@ extension Point3D {
     ///     - rhs: The right-hand-side value.
     @inlinable public static func /= (lhs: inout Point3D, rhs: Double) {
         lhs.vector /= rhs
-    }
-}
-
-extension Point3D: Primitive3D {
-    /// The point with infinite x-, y-, and z-coordinate values.
-    public static let infinity: Point3D = .init(x: .infinity, y: .infinity, z: .infinity)
-    /// The point with the zero value.
-    public static let zero: Point3D = .init()
-
-    /// A Boolean value that indicates whether the point is zero.
-    @inlinable public var isZero: Bool {
-        x.isZero
-        && y.isZero
-        && z.isZero
-    }
-    /// A Boolean value that indicates whether all of the coordinates of the point are finite.
-    @inlinable public var isFinite: Bool {
-        x.isFinite
-        && y.isFinite
-        && z.isFinite
-    }
-    /// A Boolean value that indicates whether the point contains any NaN values.
-    @inlinable public var isNaN: Bool {
-        x.isNaN
-        || y.isNaN
-        || z.isNaN
-    }
-    
-    @inlinable public mutating func apply(_ pose: Pose3D) {
-        vector += pose.position.vector
-        self.rotate(by: pose.rotation)
-    }
-    
-    @inlinable public mutating func apply(_ scaledPose: ScaledPose3D) {
-        vector += scaledPose.position.vector
-        rotate(by: scaledPose.rotation)
-        vector *= scaledPose.scale
-    }
-}
-
-extension Point3D: Translatable3D {
-    /// Offsets the point by the specified vector.
-    /// - Parameters:
-    ///     - vector: The vector that defines the translation.
-    @inlinable public mutating func translate(by vector: Vector3D) {
-        assert(vector.isFinite)
-        
-        self += vector
-    }
-}
-
-extension Point3D: Rotatable3D {
-    /// Rotates the point by the specified quaternion.
-    /// - Parameters:
-    ///     - quaternion: The double-precision quaternion that specifies the rotation.
-    @inlinable public mutating func rotate(by quaternion: simd_quatd) {
-        rotate(by: quaternion, around: .zero)
-    }
-    /// Rotates the point by a quaternion around the specified point.
-    /// - Parameters:
-    ///     - quaternion: The double-precision quaternion that specifies the rotation.
-    ///     - pivot: A point that defines the rotation pivot.
-    @inlinable public mutating func rotate(
-        by quaternion: simd_quatd,
-        around pivot: Point3D
-    ) {
-        assert(quaternion.length.isAlmostEqual(to: 1))
-        
-        vector = quaternion.act(vector - pivot.vector) + pivot.vector
-    }
-    
-    /// Returns a point that results from rotating with the specified quaternion.
-    /// - Parameters:
-    ///     - quaternion: The double-precision quaternion that specifies the rotation.
-    /// - Returns: The point that results from rotating with the specified quaternion.
-    @inlinable public func rotated(by quaternion: simd_quatd) -> Point3D {
-        rotated(by: quaternion, around: .zero)
-    }
-    /// Returns a point that results from rotating with a quaternion around the specified point.
-    /// - Parameters:
-    ///     - quaternion: The double-precision quaternion that specifies the rotation.
-    ///     - pivot: A point that defines the rotation pivot.
-    /// - Returns: The point that results from rotating with the specified quaternion.
-    @inlinable public func rotated(
-        by quaternion: simd_quatd,
-        around pivot: Point3D
-    ) -> Point3D {
-        var p = self
-        p.rotate(by: quaternion, around: pivot)
-        return p
     }
 }
 

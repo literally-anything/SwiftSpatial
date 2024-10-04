@@ -1,3 +1,5 @@
+public typealias Volumetric = Volumetric3D
+
 /// A set of methods for working with Spatial primitives with volume.
 public protocol Volumetric3D {
     /// The size of the volume.

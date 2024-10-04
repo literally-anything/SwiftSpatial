@@ -86,6 +86,10 @@ public struct Point2D: Sendable, Codable, Hashable {
 }
 
 extension Point2D: ExpressibleByArrayLiteral {
+    /// Initialize the point using an array of components.
+    /// The array should only ever be of length 2.
+    /// - Parameters:
+    ///     - arrayLiteral: The array of length 2 that defines the x and y components.
     @inlinable public init(arrayLiteral elements: Double...) {
         assert(elements.count == 2, "Point2D only has 2 elements.")
 

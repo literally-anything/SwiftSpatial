@@ -75,6 +75,18 @@ public struct Size2D: Sendable, Codable, Hashable {
     }
 }
 
+extension Size2D: ExpressibleByArrayLiteral {
+    /// Initialize the size using an array of components.
+    /// The array should only ever be of length 2.
+    /// - Parameters:
+    ///     - arrayLiteral: The array of length 2 that defines the width and height components.
+    @inlinable public init(arrayLiteral elements: Double...) {
+        assert(elements.count == 2, "Size2D only has 2 elements.")
+
+        self.init(width: elements.first!, height: elements.last!)
+    }
+}
+
 extension Size2D: ApproximatelyEquatable {
     @inlinable public func isApproximatelyEqual(to other: Size2D,
                                                 relativeTolerance: Double = .ulpOfOne.squareRoot()) -> Bool {

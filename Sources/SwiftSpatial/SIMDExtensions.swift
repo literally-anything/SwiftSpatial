@@ -18,17 +18,17 @@ extension simd_double4 {
 extension simd_quatd: Codable {
     public static let identity: simd_quatd = .init(real: 1, imag: .zero)
     
-    public init(from decoder: any Decoder) throws {
+    @inlinable public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         self.init(vector: try values.decode(SIMD4<Double>.self, forKey: .vector))
     }
     
-    public func encode(to encoder: Encoder) throws {
+    @inlinable public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(vector, forKey: .vector)
     }
     
-    enum CodingKeys: String, CodingKey {
+    @usableFromInline enum CodingKeys: String, CodingKey {
         case vector
     }
 }

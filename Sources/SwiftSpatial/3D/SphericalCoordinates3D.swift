@@ -1,6 +1,8 @@
 public import simd
+public import RealModule
 
 /// A structure that defines spherical coordinates in radial, inclination, azimuthal order.
+/// This is currently very broken.
 public struct SphericalCoordinates3D: Sendable, Codable, Hashable {
     /// The distance to the origin.
     public var radius: Double
@@ -84,9 +86,9 @@ public struct SphericalCoordinates3D: Sendable, Codable, Hashable {
         to other: SphericalCoordinates3D,
         tolerance: Double = .ulpOfOne.squareRoot()
     ) -> Bool {
-        radius.isAlmostEqual(to: other.radius, tolerance: tolerance)
-        && inclination.isApproximatelyEqual(to: other.inclination, tolerance: tolerance)
-        && azimuth.isApproximatelyEqual(to: other.azimuth, tolerance: tolerance)
+        radius.isApproximatelyEqual(to: other.radius, relativeTolerance: tolerance) &&
+        inclination.isApproximatelyEqual(to: other.inclination, relativeTolerance: tolerance) &&
+        azimuth.isApproximatelyEqual(to: other.azimuth, relativeTolerance: tolerance)
     }
 }
 

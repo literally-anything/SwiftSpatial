@@ -315,7 +315,9 @@ public struct Rotation3D: Sendable, Hashable, Codable {
         }
         /// Creates a new Euler angles structure from the specified single-precision angles and order.
         /// - Parameters:
-        ///     - angles: A three-element, single-precision vector that specifies the Euler angles.
+        ///     - x: The first angle.
+        ///     - y: The second angle.
+        ///     - z: The third angle.
         ///     - order: The Euler angle order.
         @inlinable public init(x: Angle2D,
                                y: Angle2D,
@@ -363,7 +365,7 @@ extension Rotation3D: ExpressibleByArrayLiteral {
     /// Initialize the rotation using an array of quaternion components.
     /// The array should only ever be of length 4.
     /// - Parameters:
-    ///     - arrayLiteral: The array of length 4 that defines the x, y, z, and w components.
+    ///     - elements: The array of length 4 that defines the x, y, z, and w components.
     @inlinable public init(arrayLiteral elements: Double...) {
         assert(elements.count == 4, "Rotation3Dh only has 4 elements.")
 

@@ -28,7 +28,7 @@ public protocol Primitive3D {
     mutating func apply(_ pose: Pose3D)
     /// Applies a scaled pose.
     /// - Parameters:
-    ///     - pose: The scaled pose that the function applies to the Spatial primitive.
+    ///     - scaledPose: The scaled pose that the function applies to the Spatial primitive.
     mutating func apply(_ scaledPose: ScaledPose3D)
 
 //    /// Returns the entity that results from applying an affine transform.
@@ -48,7 +48,7 @@ public protocol Primitive3D {
     func applying(_ pose: Pose3D) -> Self
     /// Returns the entity that results from applying the specified scaled pose.
     /// - Parameters:
-    ///     - pose: The scaled pose that the function applies to the Spatial primitive.
+    ///     - scaledPose: The scaled pose that the function applies to the Spatial primitive.
     func applying(_ scaledPose: ScaledPose3D) -> Self
 
 //    /// Unapplies an affine transform.
@@ -68,7 +68,7 @@ public protocol Primitive3D {
     mutating func unapply(_ pose: Pose3D)
     /// Unapplies a scaled pose.
     /// - Parameters:
-    ///     - pose: The scaled pose that the function unapplies to the Spatial primitive.
+    ///     - scaledPose: The scaled pose that the function unapplies to the Spatial primitive.
     mutating func unapply(_ scaledPose: ScaledPose3D)
 
 //    /// Returns the entity that results from unapplying an affine transform.
@@ -88,7 +88,7 @@ public protocol Primitive3D {
     func unapplying(_ pose: Pose3D) -> Self
     /// Returns the entity that results from unapplying the specified scaled pose.
     /// - Parameters:
-    ///     - pose: The scaled pose that the function unapplies to the Spatial primitive.
+    ///     - scaledPose: The scaled pose that the function unapplies to the Spatial primitive.
     func unapplying(_ scaledPose: ScaledPose3D) -> Self
 }
 

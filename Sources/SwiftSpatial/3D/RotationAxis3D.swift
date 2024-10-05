@@ -72,7 +72,7 @@ extension RotationAxis3D: ExpressibleByArrayLiteral {
     /// Initialize the rotation axis using an array of components.
     /// The array should only ever be of length 3.
     /// - Parameters:
-    ///     - arrayLiteral: The array of length 3 that defines the x, y, and z components.
+    ///     - elements: The array of length 3 that defines the x, y, and z components.
     @inlinable public init(arrayLiteral elements: Double...) {
         assert(elements.count == 3, "RotationAxis3D only has 3 elements.")
 

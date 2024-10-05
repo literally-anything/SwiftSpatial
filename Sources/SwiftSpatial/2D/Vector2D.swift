@@ -146,7 +146,7 @@ extension Vector2D: ExpressibleByArrayLiteral {
     /// Initialize the vector using an array of components.
     /// The array should only ever be of length 2.
     /// - Parameters:
-    ///     - arrayLiteral: The array of length 2 that defines the x and y components.
+    ///     - elements: The array of length 2 that defines the x and y components.
     @inlinable public init(arrayLiteral elements: Double...) {
         assert(elements.count == 2, "Vector2D only has 2 elements.")
 

@@ -45,17 +45,17 @@ public struct Pose2D: Sendable, Codable, Hashable {
         self.init(position: position,
                   angle: .atan2(y: angleDifference.y, x: angleDifference.x))
     }
-//    /// Creates a pose with the specified scaled pose.
-//    /// - Parameters:
-//    ///     - scaledPose: A scaled pose structure to get the position and rotation from.
-//    @inlinable public init(_ scaledPose: ScaledPose3D) {
-//        self.init(position: scaledPose.position,
-//                  angle: scaledPose.angle)
-//    }
+    /// Creates a pose with the specified scaled pose.
+    /// - Parameters:
+    ///     - scaledPose: A scaled pose structure to get the position and rotation from.
+    @inlinable public init(_ scaledPose: ScaledPose2D) {
+        self.init(position: scaledPose.position,
+                  angle: scaledPose.angle)
+    }
     /// Creates a pose with the specified position and angle structures.
     /// - Parameters:
     ///     - position: A point structure that specifies the position of the pose.
-    ///     - rotation: An angle structure that specifies the angle in radians.
+    ///     - angle: An angle structure that specifies the angle in radians.
     @inlinable public init(position: Point2D, angle: Angle2D) {
         self.position = position
         self.angle = angle

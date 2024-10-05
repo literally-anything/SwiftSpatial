@@ -201,7 +201,7 @@ extension Angle2D: AdditiveArithmetic {
     public static let zero: Angle2D = .init()
     
     /// Returns the given angle unchanged.
-    @inlinable prefix public static func + (x: Angle2D) -> Angle2D { x }
+    @inlinable public static prefix func + (x: Angle2D) -> Angle2D { x }
     /// Adds two angles and produces their sum.
     @inlinable public static func + (lhs: Angle2D, rhs: Angle2D) -> Angle2D {
         var angle = lhs
@@ -214,7 +214,7 @@ extension Angle2D: AdditiveArithmetic {
     }
     
     /// Returns the additive inverse of the given angle.
-    @inlinable prefix public static func - (x: Angle2D) -> Angle2D {
+    @inlinable public static prefix func - (x: Angle2D) -> Angle2D {
         var negative = x
         negative.radians.negate()
         return negative

@@ -10,7 +10,7 @@ let package = Package(
     products: [
         .library(
             name: "SwiftSpatial",
-            targets: ["SwiftSpatial"])
+            targets: ["SwiftSpatial"]),
     ],
     dependencies: [
         .package(url: "https://github.com/keyvariable/kvSIMD.swift.git", from: "1.0.3"),
@@ -41,3 +41,12 @@ let package = Package(
         ),
     ]
 )
+
+#if !canImport(Spatial)
+package.targets.append(
+    .target(name: "Spatial", dependencies: ["SwiftSpatial"])
+)
+package.products.append(
+    .library(name: "Spatial", targets: ["Spatial"])
+)
+#endif
